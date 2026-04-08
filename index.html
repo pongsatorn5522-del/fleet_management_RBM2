@@ -5,162 +5,341 @@
     <meta charset="UTF-8">
     <title>Fleet Management</title>
     <style>
-        
         body {
             font-family: sans-serif;
             background: #f0f2f5;
-            margin : 0;
-            padding : 24px;
-
-        } 
+            margin: 0;
+            padding: 24px;
+        }
 
         .header {
-            background: white ;
+            background: white;
             border-radius: 12px;
             padding: 24px 32px;
             margin-bottom: 24px;
             border-left: 5px solid #ecf542;
         }
+
         .card-row {
-            display : flex;
-            gap : 16px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
         }
-        .card { 
+
+        .card {
             background: white;
             border-radius: 12px;
             padding: 24px;
             flex: 1;
-    
+            min-width: 150px;
         }
+
         .card-label {
             font-size: 13px;
             color: #64748b;
             margin-bottom: 8px;
         }
-        .card-value { 
+
+        .card-value {
             font-size: 28px;
             font-weight: bold;
-            color : #1e3a5f;
-
+            color: #1e3a5f;
         }
+
         .card-blue {
             background: #2563eb;
         }
-        .card-blue .card-label ,
+
+        .card-blue .card-label,
         .card-blue .card-value {
             color: white;
-        }   
+        }
 
-    
-        </style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #1e3a5f;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 </head>
 
 <body>
     <div class="header">
         <h1>Fleet Management Dashboard</h1>
-        <p> RBM2 </p>
+        <p> RBM2 - ระบบวิเคราะห์ข้อมูลการซ่อม </p>
     </div>
-    <div class="card-row">
-        
-        <div class="card card-blue">
-            <div class="card-label">ค่าซ่อมทั้งหมด</div>
-            <div class="card-value"id = "totalcost">฿ 0</div>
-            </div>
-        <div class="card">
-            <div class="card-label">จำนวนครั้งที่ซ่อมทั้งหมด</div>
-            <div class="card-value"id = "totalrepaired">0 ครั้ง</div>
 
+    <div class="card-row">
+        <div class="card card-blue">
+            <div class="card-label">ค่าซ่อมทั้งหมด (ตามที่กรอง)</div>
+            <div class="card-value" id="totalcost">฿ 0</div>
+        </div>
+        <div class="card">
+            <div class="card-label">จำนวนครั้งที่ซ่อม</div>
+            <div class="card-value" id="totalrepaired">0 ครั้ง</div>
         </div>
         <div class="card">
             <div class="card-label">จำนวนรถทั้งหมด</div>
-            <div class="card-value"id = "totalvehicles
-            ">7 คัน</div>
-
+            <div class="card-value">7 คัน</div>
         </div>
         <div class="card">
-            <div class="card-label">:ซ่อมฉุกเฉินBM</div>
-            <div class="card-value"id = "BreakdownRepaired">0 ครั้ง</div>
+            <div class="card-label">ซ่อมฉุกเฉิน BM</div>
+            <div class="card-value" id="BreakdownRepaired">0 ครั้ง</div>
         </div>
         <div class="card">
-            <div class="card-label">:ซ่อมป้องกันPM</div>
-            <div class="card-value"id = "PreventiveRepaired">0 ครั้ง</div>
+            <div class="card-label">ซ่อมป้องกัน PM</div>
+            <div class="card-value" id="PreventiveRepaired">10 ครั้ง</div>
         </div>
         <div class="card">
-            <div class="card-label">:ซ่อมแก้ไขCM</div>
-            <div class="card-value"id = "CorrectiveRepaired">0 ครั้ง</div>
+            <div class="card-label">ซ่อมแก้ไข CM</div>
+            <div class="card-value" id="CorrectiveRepaired">21 ครั้ง</div>
         </div>
-        <div class="header" style="margin-top: 24px;">
-    <h2>สรุปค่าซ่อมแยกตามทะเบียนรถ</h2>
-    <table id="vehicleTable" style="width:100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
-        <thead>
-            <tr style="background: #1e3a5f; color: white; text-align: left;">
-                <th style="padding: 12px;">ทะเบียนรถ</th>
-                <th style="padding: 12px;">จำนวนครั้ง</th>
-                <th style="padding: 12px;">ค่าอะไหล่รวม</th>
-                <th style="padding: 12px;">ค่าแรงรวม</th>
-                <th style="padding: 12px;">ยอดรวมทั้งหมด</th>
-            </tr>
-        </thead>
-        <tbody id="vehicleTableBody">
-            </tbody>
-    </table>
-</div>
     </div>
-<script>
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwq0XY49ZzCMIDubKmAoCpaech2r-tSuFcZXZWKW7mVYO8gnjw5q7XHvOeyApOcY-ZZ9gJGcYTo8rH/pub?output=csv'
-    const CSV_FILE = SHEET_URL + '&cache_buster=' + Date.now();
 
-    // ฟังก์ชันสำหรับแปลงข้อความเป็นตัวเลข (รองรับคอมม่าและช่องว่าง)
-    function cleanNumber(val) {
-        if (!val || val === "" || val === "-") return 0;
-        // ลบทุกอย่างที่ไม่ใช่ตัวเลขและจุดทศนิยม
-        let num = String(val).replace(/[^0-9.]/g, '');
-        return parseFloat(num) || 0;
-    }
+    <div class="header" style="margin-top: 24px;">
+        <h2>ตัวกรองข้อมูล</h2>
+        <div style="margin-bottom: 15px;">
+            <span>เลือกช่วงเวลาย้อนหลัง: </span>
+            <button onclick="changePeriod(1)">1 เดือน</button>
+            <button onclick="changePeriod(3)">3 เดือน</button>
+            <button onclick="changePeriod(6)">6 เดือน</button>
+            <button onclick="changePeriod(12)">1 ปี</button>
+            <button onclick="changePeriod(999)">ทั้งหมด</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <span>เลือกดูรายปี (ค.ศ.): </span>
+            <button onclick="filterByYear(2023)">2023</button>
+            <button onclick="filterByYear(2024)">2024</button>
+            <button onclick="filterByYear(2025)">2025</button>
+            <button onclick="filterByYear(2026)">2026</button>
+        </div>
 
-    function updateDashboard(data) {
-        let totalCost = 0;
-        let BM = 0, PM = 0, CM = 0;
-
-        data.forEach(row => {
-            // PapaParse จะแปลงคอลัมน์เป็น Object ให้เราโดยอัตโนมัติ
-            // เราแค่ดึง Key ให้ตรงกับหัวตารางใน CSV
-            const labor = cleanNumber(row["ค่าแรง"]);
-            const parts = cleanNumber(row["ค่าอะไหล่"]);
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; min-width: 300px; max-width: 500px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                <canvas id="systemChart"></canvas>
+            </div>
             
-            totalCost += (labor + parts);
+            <div style="flex: 2; min-width: 400px;">
+                <h3>สรุปค่าซ่อมแยกตามทะเบียนรถ</h3>
+                <table id="vehicleTable">
+                    <thead>
+                        <tr>
+                            <th>ทะเบียนรถ</th>
+                            <th style="text-align: center;">ครั้ง</th>
+                            <th>ค่าอะไหล่</th>
+                            <th>ค่าแรง</th>
+                            <th>ยอดรวม</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehicleTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-            const type = row["ประเภทการซ่อม"] || "";
-            if (type.includes("BM")) BM++;
-            else if (type.includes("PM")) PM++;
-            else if (type.includes("CM")) CM++;
-        });
+    <script>
+        // [แก้ไขจุดที่ 2] ลงทะเบียน Plugin เพื่อเปิดใช้งาน
+        Chart.register(ChartDataLabels);
 
-        // อัปเดตการแสดงผล
-        document.getElementById("totalcost").textContent = "฿ " + totalCost.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-        document.getElementById("totalrepaired").textContent = data.length + " ครั้ง";
-        document.getElementById("BreakdownRepaired").textContent = BM + " ครั้ง";
-        document.getElementById("PreventiveRepaired").textContent = PM + " ครั้ง";
-        document.getElementById("CorrectiveRepaired").textContent = CM + " ครั้ง";
-    }
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwq0XY49ZzCMIDubKmAoCpaech2r-tSuFcZXZWKW7mVYO8gnjw5q7XHvOeyApOcY-ZZ9gJGcYTo8rH/pub?output=csv';
+        const CSV_FILE = SHEET_URL + '&cache_buster=' + Date.now();
 
-    // ใช้ PapaParse ดึงและอ่านไฟล์
-    Papa.parse(CSV_FILE, {
-        download: true,
-        header: true,           // ให้ใช้บรรทัดแรกเป็น Key ของ Object
-        skipEmptyLines: true,   // ข้ามบรรทัดว่างให้อัตโนมัติ (แก้ปัญหานับเลขขาด/เกิน)
-        complete: function(results) {
-            console.log("Data loaded successfully:", results.data);
-            updateDashboard(results.data);
-        },
-        error: function(err) {
-            console.error("Error loading CSV:", err);
+        var rawData = [];
+        var myChart = null;
+
+        function cleanNumber(val) {
+            if (!val || val === "" || val === "-") return 0;
+            let num = String(val).replace(/[^0-9.]/g, '');
+            return parseFloat(num) || 0;
         }
-    });
-</script>
+
+        function parseThaiDate(dateStr) {
+            if (!dateStr) return new Date(0);
+            let parts = dateStr.split('/');
+            if (parts.length < 3) return new Date(0);
+            let day = parseInt(parts[0]);
+            let month = parseInt(parts[1]) - 1;
+            let year = parseInt(parts[2]);
+            if (year > 2500) year -= 543; 
+            return new Date(year, month, day);
+        }
+
+        function updateDashboard(data) {
+            rawData = data;
+            renderDashboard(rawData);
+        }
+
+        function changePeriod(months) {
+            let cutoff = new Date();
+            cutoff.setMonth(cutoff.getMonth() - months);
+            if (months > 100) cutoff = new Date(0);
+
+            let filtered = rawData.filter(row => {
+                let date = parseThaiDate(row["วันที่ซ่อมเสร็จ"]);
+                return date >= cutoff;
+            });
+            renderDashboard(filtered);
+        }
+
+        function filterByYear(targetYear) {
+            let filtered = rawData.filter(row => {
+                let date = parseThaiDate(row["วันที่ซ่อมเสร็จ"]);
+                return date.getFullYear() === targetYear;
+            });
+            if (filtered.length === 0) alert("ไม่พบข้อมูลในปี " + targetYear);
+            renderDashboard(filtered);
+        }
+
+        function renderDashboard(data) {
+            let totalCost = 0, BM = 0, PM = 0, CM = 0;
+            let systemStats = {};
+            let vehicleData = {};
+
+            data.forEach(row => {
+                let parts = cleanNumber(row["ค่าอะไหล่"]);
+                let labor = cleanNumber(row["ค่าแรง"]);
+                let cost = parts + labor;
+                let type = row["ประเภทการซ่อม"] || "";
+                let system = (row["ระบบที่ซ่อม"] || "อื่นๆ").trim();
+                let plate = (row["ทะเบียนรถ"] || "ไม่ระบุ").trim();
+
+                totalCost += cost;
+                if (type.includes("BM")) BM++;
+                else if (type.includes("PM")) PM++;
+                else if (type.includes("CM")) CM++;
+
+                systemStats[system] = (systemStats[system] || 0) + cost;
+
+                if (!vehicleData[plate]) {
+                    vehicleData[plate] = { count: 0, parts: 0, labor: 0, cost: 0 };
+                }
+                vehicleData[plate].count++;
+                vehicleData[plate].parts += parts;
+                vehicleData[plate].labor += labor;
+                vehicleData[plate].cost += cost;
+            });
+
+            document.getElementById("totalcost").textContent = "฿ " + totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            document.getElementById("totalrepaired").textContent = data.length + " ครั้ง";
+            document.getElementById("BreakdownRepaired").textContent = BM + " ครั้ง";
+            document.getElementById("PreventiveRepaired").textContent = PM + " ครั้ง";
+            document.getElementById("CorrectiveRepaired").textContent = CM + " ครั้ง";
+
+            updateChart(systemStats);
+            updateTable(vehicleData);
+        }
+
+        function updateChart(stats) {
+            let ctx = document.getElementById('systemChart').getContext('2d');
+            
+            // คำนวณยอดรวมทั้งหมดเพื่อเอาไปคิดเปอร์เซ็นต์
+            let totalVal = Object.values(stats).reduce((a, b) => a + b, 0);
+
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(stats),
+                    datasets: [{
+                        data: Object.values(stats),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    // ปรับตำแหน่งกราฟนิดหน่อยเพื่อให้ datalabels ไม่หลุดขอบ
+                    layout: {
+                        padding: 20
+                    },
+                    plugins: { 
+                        title: { display: true, text: 'สัดส่วนค่าซ่อมแยกตามระบบ (%)' },
+                        legend: { position: 'bottom' },
+                        // [แก้ไขจุดที่ 3] ตั้งค่าการแสดงผลตัวเลขบนกราฟ
+                        datalabels: {
+                            color: '#fff', // สีตัวอักษรบนกราฟ (ใช้สีขาวเพื่อให้ตัดกับสีพื้น)
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            // ฟังก์ชันสำหรับคำนวณและแสดงค่าเปอร์เซ็นต์
+                            formatter: (value, ctx) => {
+                                if (totalVal === 0) return '';
+                                let percentage = (value * 100 / totalVal).toFixed(1) + "%"; // แสดงทศนิยม 1 ตำแหน่ง
+                                // ถ้าเปอร์เซ็นต์น้อยมาก (เช่น < 3%) ไม่ต้องโชว์เพื่อไม่ให้ทับกัน
+                                if ((value * 100 / totalVal) < 3) return ''; 
+                                return percentage;
+                            },
+                            anchor: 'center', // ปักหมุดที่จุดกึ่งกลางของแต่ละชิ้น
+                            align: 'center',  // จัดตัวอักษรให้อยู่ตรงกลางชิ้น
+                            textShadowColor: 'rgba(0, 0, 0, 0.5)', // เพิ่มเงาเพื่อให้ตัวเลขชัดขึ้นบนสีอ่อน
+                            textShadowBlur: 4,
+                            // ปรับไม่ให้ datalabels ซ้อนทับกัน
+                            clamp: true,
+                            clip: true
+                        }
+                    } 
+                }
+            });
+        }
+
+        function updateTable(vData) {
+            let tbody = document.getElementById("vehicleTableBody");
+            tbody.innerHTML = "";
+            Object.keys(vData).forEach(plate => {
+                let d = vData[plate];
+                let row = `<tr>
+                    <td><b>${plate}</b></td>
+                    <td style="text-align: center;">${d.count}</td>
+                    <td style="color: #64748b;">฿${d.parts.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td style="color: #64748b;">฿${d.labor.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td style="color: #2563eb; font-weight: bold;">฿${d.cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        Papa.parse(CSV_FILE, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function (results) {
+                updateDashboard(results.data);
+            }
+        });
+    </script>
 </body>
+
 </html>
