@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fleet Management</title>
+    <style>
+        
+        body {
+            font-family: sans-serif;
+            background: #f0f2f5;
+            margin : 0;
+            padding : 24px;
+
+        } 
+
+        .header {
+            background: white ;
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border-left: 5px solid #ecf542;
+        }
+        .card-row {
+            display : flex;
+            gap : 16px;
+        }
+        .card { 
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            flex: 1;
+    
+        }
+        .card-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .card-value { 
+            font-size: 28px;
+            font-weight: bold;
+            color : #1e3a5f;
+
+        }
+        .card-blue {
+            background: #2563eb;
+        }
+        .card-blue .card-label ,
+        .card-blue .card-value {
+            color: white;
+        }   
+
+    
+        </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Fleet Management Dashboard</h1>
+        <p> RBM2 </p>
+    </div>
+    <div class="card-row">
+        
+        <div class="card card-blue">
+            <div class="card-label">ค่าซ่อมทั้งหมด</div>
+            <div class="card-value"id = "totalcost">฿ 0</div>
+            </div>
+        <div class="card">
+            <div class="card-label">จำนวนครั้งที่ซ่อมทั้งหมด</div>
+            <div class="card-value"id = "totalrepaired">0 ครั้ง</div>
+
+        </div>
+        <div class="card">
+            <div class="card-label">จำนวนรถทั้งหมด</div>
+            <div class="card-value"id = "totalvehicles
+            ">7 คัน</div>
+
+        </div>
+        <div class="card">
+            <div class="card-label">:ซ่อมฉุกเฉินBM</div>
+            <div class="card-value"id = "BreakdownRepaired">0 ครั้ง</div>
+        </div>
+        <div class="card">
+            <div class="card-label">:ซ่อมป้องกันPM</div>
+            <div class="card-value"id = "PreventiveRepaired">0 ครั้ง</div>
+        </div>
+        <div class="card">
+            <div class="card-label">:ซ่อมแก้ไขCM</div>
+            <div class="card-value"id = "CorrectiveRepaired">0 ครั้ง</div>
+        </div>
+        <div class="header" style="margin-top: 24px;">
+    <h2>สรุปค่าซ่อมแยกตามทะเบียนรถ</h2>
+    <table id="vehicleTable" style="width:100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+        <thead>
+            <tr style="background: #1e3a5f; color: white; text-align: left;">
+                <th style="padding: 12px;">ทะเบียนรถ</th>
+                <th style="padding: 12px;">จำนวนครั้ง</th>
+                <th style="padding: 12px;">ค่าอะไหล่รวม</th>
+                <th style="padding: 12px;">ค่าแรงรวม</th>
+                <th style="padding: 12px;">ยอดรวมทั้งหมด</th>
+            </tr>
+        </thead>
+        <tbody id="vehicleTableBody">
+            </tbody>
+    </table>
+</div>
+    </div>
+<script>
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwq0XY49ZzCMIDubKmAoCpaech2r-tSuFcZXZWKW7mVYO8gnjw5q7XHvOeyApOcY-ZZ9gJGcYTo8rH/pub?output=csv'
+    const CSV_FILE = SHEET_URL + '&cache_buster=' + Date.now();
+
+    // ฟังก์ชันสำหรับแปลงข้อความเป็นตัวเลข (รองรับคอมม่าและช่องว่าง)
+    function cleanNumber(val) {
+        if (!val || val === "" || val === "-") return 0;
+        // ลบทุกอย่างที่ไม่ใช่ตัวเลขและจุดทศนิยม
+        let num = String(val).replace(/[^0-9.]/g, '');
+        return parseFloat(num) || 0;
+    }
+
+    function updateDashboard(data) {
+        let totalCost = 0;
+        let BM = 0, PM = 0, CM = 0;
+
+        data.forEach(row => {
+            // PapaParse จะแปลงคอลัมน์เป็น Object ให้เราโดยอัตโนมัติ
+            // เราแค่ดึง Key ให้ตรงกับหัวตารางใน CSV
+            const labor = cleanNumber(row["ค่าแรง"]);
+            const parts = cleanNumber(row["ค่าอะไหล่"]);
+            
+            totalCost += (labor + parts);
+
+            const type = row["ประเภทการซ่อม"] || "";
+            if (type.includes("BM")) BM++;
+            else if (type.includes("PM")) PM++;
+            else if (type.includes("CM")) CM++;
+        });
+
+        // อัปเดตการแสดงผล
+        document.getElementById("totalcost").textContent = "฿ " + totalCost.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        document.getElementById("totalrepaired").textContent = data.length + " ครั้ง";
+        document.getElementById("BreakdownRepaired").textContent = BM + " ครั้ง";
+        document.getElementById("PreventiveRepaired").textContent = PM + " ครั้ง";
+        document.getElementById("CorrectiveRepaired").textContent = CM + " ครั้ง";
+    }
+
+    // ใช้ PapaParse ดึงและอ่านไฟล์
+    Papa.parse(CSV_FILE, {
+        download: true,
+        header: true,           // ให้ใช้บรรทัดแรกเป็น Key ของ Object
+        skipEmptyLines: true,   // ข้ามบรรทัดว่างให้อัตโนมัติ (แก้ปัญหานับเลขขาด/เกิน)
+        complete: function(results) {
+            console.log("Data loaded successfully:", results.data);
+            updateDashboard(results.data);
+        },
+        error: function(err) {
+            console.error("Error loading CSV:", err);
+        }
+    });
+</script>
+</body>
+</html>
